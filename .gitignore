@@ -5,3 +5,4 @@ mecab-ipadic-neologd/
 chrome/
 chromedriver/
 mariadb_repo_setup
+out/
