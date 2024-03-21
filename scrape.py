@@ -29,7 +29,7 @@ def getCourses(value = "all"):
         # driver = webdriver.Chrome(service=service, options=chrome_options)
 
         #use driver_version as given in README
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='104.0.5112.79').install()), options=chrome_options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
 
         url = "https://campus.icu.ac.jp/icumap/ehb/SearchCO.aspx"
 
@@ -42,6 +42,12 @@ def getCourses(value = "all"):
         driver.find_element(By.ID,"password_input").send_keys(os.environ['ICU_SSO_PASSWORD'])
         driver.find_element(By.ID,"login_button").click()
         driver.implicitly_wait(3)
+        
+        # Select Academic Year
+        select_element = driver.find_element(By.ID,"ctl00_ContentPlaceHolder1_ddl_year")
+        select_object = Select(select_element)
+        select_object.select_by_visible_text(os.environ['ACADEMIC_YEAR'])
+        
 
         # Select show ALL results to get full course list
         select_element = driver.find_element(By.ID,"ctl00_ContentPlaceHolder1_ddlPageSize")
@@ -70,7 +76,7 @@ def getCourses(value = "all"):
         
 def getSyllabus(year,regno):
         try:
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='104.0.5112.79').install()), options=chrome_options)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
 
             extractTag = re.compile('lbl_[^\"]+')
             resList = []
@@ -109,7 +115,7 @@ def getSyllabus(year,regno):
             
 def getELA():
     try: 
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='104.0.5112.79').install()), options=chrome_options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
 
         url = "https://course-reg.icu.ac.jp/ela/stsch/show_schedule.shtml"
         # Open site (will be sent to SSO login)
