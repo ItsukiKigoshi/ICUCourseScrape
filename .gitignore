@@ -6,3 +6,4 @@ chrome/
 chromedriver/
 mariadb_repo_setup
 out/
+.idea

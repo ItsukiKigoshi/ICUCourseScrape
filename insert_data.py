@@ -85,7 +85,7 @@ Base.metadata.create_all(engine)
 SessionClass = sessionmaker(engine)
 session = SessionClass()
 
-courses_list = helper.getCourseInfo()
+courses_list = helper.get_course_info()
 
 course_object_list = []
 for i in courses_list:

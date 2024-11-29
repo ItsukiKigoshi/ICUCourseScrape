@@ -1,16 +1,15 @@
 import traceback
 from selenium import webdriver
+from selenium.common import NoSuchElementException, WebDriverException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-import json
 import re
 import os 
 from dotenv import load_dotenv
-import time
 from tqdm import tqdm
 
 load_dotenv()
@@ -21,15 +20,15 @@ chrome_options.add_experimental_option("detach", True)
 chrome_options.add_argument("--incognito") #don't want cache
 chrome_options.add_argument("--headless")
 
-def getCourses(value = "all"):
-    try: 
-        # service = Service(ChromeDriverManager(version='114.0.5735.90').install()) 
+#use driver_version as given in README
+driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='131.0.6778.86').install()), options=chrome_options)
+
+def get_courses(value ="all"):
+    try:
+        # service = Service(ChromeDriverManager(version='114.0.5735.90').install())
         # driver = webdriver.Chrome(service=service, options=chrome_options)
         # service = Service()
         # driver = webdriver.Chrome(service=service, options=chrome_options)
-
-        #use driver_version as given in README
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
 
         url = "https://campus.icu.ac.jp/icumap/ehb/SearchCO.aspx"
 
@@ -53,6 +52,7 @@ def getCourses(value = "all"):
         select_element = driver.find_element(By.ID,"ctl00_ContentPlaceHolder1_ddlPageSize")
         select_object = Select(select_element)
         select_object.select_by_visible_text("ALL")
+        # select_object.select_by_visible_text("50")
 
         if value == "all":
             pass
@@ -67,34 +67,39 @@ def getCourses(value = "all"):
         # Find course table
         tables = driver.find_elements(By.TAG_NAME,"table")
         course_table = tables[3].get_attribute('innerHTML')
-        #print(course_table)
         return course_table
-    except:
-        traceback.print_exc()
+    except KeyError as ke:
+        print(f"Environment variable error: {ke}")
+    except NoSuchElementException as nse:
+        print(f"Element not found error: {nse}")
+    except WebDriverException as wde:
+        print(f"WebDriver error: {wde}")
+    except Exception as e:  # Catch-all for unexpected errors
+        print(f"Unexpected error: {e}")
     finally:
-        driver.quit()
+        if driver:  # Ensure driver is not None
+            driver.quit()
         
-def getSyllabus(year,regno):
+def get_syllabus(year, rgno):
         try:
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
-
-            extractTag = re.compile('lbl_[^\"]+')
-            resList = []
-            for i in tqdm(range(len(regno))):
-                url = "https://campus.icu.ac.jp/public/ehandbook/PreviewSyllabus.aspx?year="+year+"&regno="+str(regno[i])+"&term="+str(regno[i])[0]
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='131.0.6778.86').install()), options=chrome_options)
+            extract_tag = re.compile('lbl_[^\"]+')
+            res_list = []
+            for i in tqdm(range(len(rgno))):
+                url = "https://campus.icu.ac.jp/public/ehandbook/PreviewSyllabus.aspx?year="+year+"&rgno="+str(rgno[i])+"&term="+str(rgno[i])[0]
                 # Open site
                 # print(url)
                 driver.get(url)
                 driver.implicitly_wait(1)
                 # Find course table (get page -> get main table -> find td with contents inside it -> )
                 form = driver.find_elements(By.TAG_NAME,"form")
-                contentTable = BeautifulSoup(form[0].get_attribute('innerHTML'),'lxml')
-                rawText = contentTable.find_all('span')
-                syllabusDict = {'rgno':regno[i]}
-                for x in rawText:
+                content_table = BeautifulSoup(form[0].get_attribute('innerHTML'),'lxml')
+                raw_text = content_table.find_all('span')
+                syllabus_dict = {'rgno':rgno[i]}
+                for x in raw_text:
 
                     # Process Tag and content
-                    tag = extractTag.findall(str(x))
+                    tag = extract_tag.findall(str(x))
                     if tag == []:
                         continue
                     tag = tag[0].replace('lbl_','')
@@ -104,16 +109,16 @@ def getSyllabus(year,regno):
                     content = str(x).replace("<br/>",'\n')
                     content = re.sub('<[^>]+>','',content)
                     # Add to Dict
-                    syllabusDict.update({tag:content.strip('\n')})
-                resList.append(syllabusDict)
+                    syllabus_dict.update({tag:content.strip('\n')})
+                res_list.append(syllabus_dict)
 
-            return resList
+            return res_list
         except:
             traceback.print_exc()
         finally:
             driver.quit()
             
-def getELA():
+def get_ela():
     try: 
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(driver_version='123.0.6312.58').install()), options=chrome_options)
 
