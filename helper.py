@@ -5,11 +5,11 @@ import pandas as pd
 
 # Fill 0 for first 10 ids
 def convert_to_target(num):
-    if(num <10):
+    if num <10:
         res = str(num).zfill(2)
     else:
         res = str(num)
-    return(res)
+    return res
 
 
 def parse_schedule(schedule_raw):
@@ -26,39 +26,24 @@ def parse_schedule(schedule_raw):
     schedule_clean = schedule_raw.replace('(', '').replace(')', '')
 
     # Split by commas, spaces, or 'or'
-    parts = re.split(r',\s*|\sor\s', schedule_clean)
+    parts = re.split(r',\s*|\sor\s|<|>\s*', schedule_clean)
+    parts = list(filter(None, parts)) # Remove empty strings
+    print(f'{parts=}')
 
     for part in parts:
         flag = False
         if part.startswith('*'):  # Detect flag
             flag = True
             part = part[1:]  # Remove the asterisk for processing
-
-        if '<' in part and '>' in part:  # Detect alternatives
-            # Extract the content inside angle brackets
-            alternatives = part.strip('<>').split('/')
-            option_groups = []
-            for option in alternatives:
-                entries = option.split(',')
-                option_groups.append([
-                    {
-                        "time": int(entry.split('/')[0]),
-                        "unit": entry.split('/')[1],
-                        "flag": flag
-                    }
-                    for entry in entries
-                ])
-            structured_schedule.append({"options": option_groups})
-        elif '/' in part:  # Regular schedule entry
-            try:
-                time, unit = part.split('/', 1)  # Limit split to 1 to prevent too many values
-                structured_schedule.append({
-                    "time": int(time),
-                    "unit": unit,
-                    "flag": flag
-                })
-            except ValueError:
-                # Handle cases where the split results in an unexpected format
+        try:
+            time, day = part.split('/', 1)  # Limit split to 1 to prevent too many values
+            structured_schedule.append({
+                "time": int(time),
+                "day": day,
+                "flag": flag
+            })
+        except ValueError:
+            # Handle cases where the split results in an unexpected format
                 print(f"Warning: Skipping malformed schedule entry: {part}")
                 continue
 
@@ -115,10 +100,10 @@ def get_course_info():
 
 def get_course_list():
     x = get_course_info()
-    resgs=[]
+    regs=[]
     for x in regs:
-        resgs.append(x['rgno'])
-    return resgs
+        regs.append(x['rgno'])
+    return regs
 
 def get_ela_classrooms():
     day_map = {
@@ -134,7 +119,7 @@ def get_ela_classrooms():
     for section in raw:
         tables = pd.read_html(section)[0]
         title = tables.loc[0][0]
-        if title == ('(Regular)'):
+        if title == '(Regular)':
             date_range = range(1,6)
             time_range = range(1,8)
             for i in date_range:
@@ -145,7 +130,7 @@ def get_ela_classrooms():
                         period = "{}{}".format(day_map[i].lower(),j)
                         room_map.setdefault(str(pp[-5:]),[]).append(period)
 
-        elif title == ('Component'):
+        elif title == 'Component':
             try:
                 col_range = range(3,4)
                 row_range = range(1,25)
@@ -156,7 +141,7 @@ def get_ela_classrooms():
                         room_map.setdefault(tables.loc[j][i+1],[]).append("{}{}".format(tables.loc[j][i][:1].lower(),tables.loc[j][i][-1]))
             except:
                 continue
-        elif title == ('Instructor'):
+        elif title == 'Instructor':
             col_range = range(1,5)
             row_range = range(2,10)
             for col in col_range:
